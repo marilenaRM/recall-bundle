@@ -1,0 +1,46 @@
+name: CI
+
+on:
+    push:
+        branches: [main]
+    pull_request:
+
+permissions:
+    contents: read
+
+concurrency:
+    group: ${{ github.workflow }}-${{ github.ref }}
+    cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+    qa:
+        name: PHP ${{ matrix.php }} (${{ matrix.dependencies }})
+        runs-on: ubuntu-latest
+        strategy:
+            fail-fast: false
+            matrix:
+                include:
+                    # Static analysis is skipped on the lowest dependencies: older PHPStan
+                    # extensions and Symfony stubs report errors the highest ones do not.
+                    - php: '8.3'
+                      dependencies: lowest
+                      script: test
+                    - php: '8.3'
+                      dependencies: highest
+                      script: qa
+                    - php: '8.5'
+                      dependencies: highest
+                      script: qa
+        steps:
+            - uses: actions/checkout@v7
+
+            - uses: shivammathur/setup-php@v2
+              with:
+                  php-version: ${{ matrix.php }}
+                  coverage: none
+
+            - uses: ramsey/composer-install@v4
+              with:
+                  dependency-versions: ${{ matrix.dependencies }}
+
+            - run: composer ${{ matrix.script }}

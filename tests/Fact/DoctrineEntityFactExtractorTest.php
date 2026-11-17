@@ -20,8 +20,13 @@ final class DoctrineEntityFactExtractorTest extends TestCase
     {
         $projectDir = \dirname(__DIR__, 2);
         $config = ORMSetup::createAttributeMetadataConfig([$projectDir.'/tests/Fixtures/App/Entity'], isDevMode: true);
-        $config->setProxyDir(sys_get_temp_dir());
-        $config->setProxyNamespace('RecallTestProxies');
+        // Symfony 8 drops the LazyGhost proxies ORM falls back on before PHP 8.4
+        if (\PHP_VERSION_ID >= 80400) {
+            $config->enableNativeLazyObjects(true);
+        } else {
+            $config->setProxyDir(sys_get_temp_dir());
+            $config->setProxyNamespace('RecallTestProxies');
+        }
         $entityManager = new EntityManager(DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true], $config), $config);
         $registry = $this->createStub(ManagerRegistry::class);
         $registry->method('getManagers')->willReturn(['default' => $entityManager]);
