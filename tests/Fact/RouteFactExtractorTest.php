@@ -9,6 +9,7 @@ use MarilenaRM\RecallBundle\Fact\RouteFactExtractor;
 use MarilenaRM\RecallBundle\Fact\SourceLocator;
 use MarilenaRM\RecallBundle\Tests\Fixtures\App\Controller\CheckoutController;
 use PHPUnit\Framework\TestCase;
+use Symfony\Bundle\FrameworkBundle\Controller\RedirectController;
 use Symfony\Component\Routing\Route;
 use Symfony\Component\Routing\RouteCollection;
 use Symfony\Component\Routing\RouterInterface;
@@ -31,6 +32,13 @@ final class RouteFactExtractorTest extends TestCase
         self::assertStringContainsString('Orders are confirmed only once the payment provider called back.', $facts[0]->body);
     }
 
+    public function testAControllerGivenAsAnArrayIsResolved(): void
+    {
+        $facts = $this->extract(['checkout_confirm' => new Route('/checkout/{reference}/confirm', ['_controller' => [CheckoutController::class, 'confirm']])]);
+
+        self::assertSame('tests/Fixtures/App/Controller/CheckoutController.php:16', $facts[0]->source);
+    }
+
     public function testALocalizedRouteIsOneFact(): void
     {
         $facts = $this->extract([
@@ -41,12 +49,15 @@ final class RouteFactExtractorTest extends TestCase
         self::assertSame(['route:about'], array_map(static fn (Fact $fact): string => $fact->id, $facts));
     }
 
-    public function testARouteWithoutAResolvableControllerIsStillDescribed(): void
+    public function testRoutesNotServedByAProjectControllerAreSkipped(): void
     {
-        $facts = $this->extract(['legacy' => new Route('/legacy', ['_controller' => 'legacy.controller'])]);
+        $facts = $this->extract([
+            'sso_login_check' => new Route('/sso/login/check'),
+            'live_component' => new Route('/_components/{name}', ['_controller' => 'ux.live_component.controller']),
+            'bundle_redirect' => new Route('/old', ['_controller' => RedirectController::class.'::urlRedirectAction']),
+        ]);
 
-        self::assertSame('legacy', $facts[0]->source);
-        self::assertStringNotContainsString('Controller source', $facts[0]->body);
+        self::assertSame([], $facts);
     }
 
     /**

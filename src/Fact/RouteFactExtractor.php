@@ -36,17 +36,23 @@ final readonly class RouteFactExtractor implements FactExtractorInterface
 
             $controller = $this->reflectController($route);
 
+            // Routes served by a bundle or intercepted by a firewall (login checks, live components)
+            // carry no knowledge of the project itself.
+            if (null === $controller || !$this->sourceLocator->isInProject($controller)) {
+                continue;
+            }
+
             yield new Fact(
                 id: 'route:'.$name,
                 kind: FactKind::Route,
                 title: \sprintf('Route "%s" (%s)', $name, $route->getPath()),
                 body: $this->describe($name, $route, $controller),
-                source: null === $controller ? $name : $this->sourceLocator->reference($controller),
+                source: $this->sourceLocator->reference($controller),
             );
         }
     }
 
-    private function describe(string $name, Route $route, ?\ReflectionMethod $controller): string
+    private function describe(string $name, Route $route, \ReflectionMethod $controller): string
     {
         $lines = [
             'Route name: '.$name,
@@ -62,10 +68,8 @@ final readonly class RouteFactExtractor implements FactExtractorInterface
             $lines[] = 'Condition: '.$route->getCondition();
         }
 
-        if (null !== $controller) {
-            $lines[] = 'Controller: '.$controller->class.'::'.$controller->name;
-            $lines[] = "Controller source:\n".$this->sourceLocator->excerpt($controller);
-        }
+        $lines[] = 'Controller: '.$controller->class.'::'.$controller->name;
+        $lines[] = "Controller source:\n".$this->sourceLocator->excerpt($controller);
 
         return implode("\n", $lines);
     }
@@ -74,11 +78,13 @@ final readonly class RouteFactExtractor implements FactExtractorInterface
     {
         $controller = $route->getDefault('_controller');
 
-        if (!\is_string($controller)) {
+        if (\is_array($controller) && \is_string($controller[0] ?? null) && \is_string($controller[1] ?? null)) {
+            [$class, $method] = $controller;
+        } elseif (\is_string($controller)) {
+            [$class, $method] = str_contains($controller, '::') ? explode('::', $controller, 2) : [$controller, '__invoke'];
+        } else {
             return null;
         }
-
-        [$class, $method] = str_contains($controller, '::') ? explode('::', $controller, 2) : [$controller, '__invoke'];
 
         if (!method_exists($class, $method)) {
             return null;

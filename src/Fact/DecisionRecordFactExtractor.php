@@ -30,7 +30,7 @@ final readonly class DecisionRecordFactExtractor implements FactExtractorInterfa
             return;
         }
 
-        foreach ((new Finder())->files()->in($paths)->name('*.md')->sortByName() as $file) {
+        foreach ((new Finder())->files()->in($paths)->name('*.md')->notName('*template*')->sortByName() as $file) {
             $content = $file->getContents();
             $source = Path::makeRelative($file->getPathname(), $this->projectDir);
 

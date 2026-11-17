@@ -35,6 +35,18 @@ final readonly class SourceLocator
     /**
      * @param \ReflectionClass<*>|\ReflectionMethod $reflection
      */
+    public function isInProject(\ReflectionClass|\ReflectionMethod $reflection): bool
+    {
+        $file = $reflection->getFileName();
+
+        return false !== $file
+            && Path::isBasePath($this->projectDir, $file)
+            && !Path::isBasePath($this->projectDir.'/vendor', $file);
+    }
+
+    /**
+     * @param \ReflectionClass<*>|\ReflectionMethod $reflection
+     */
     public function excerpt(\ReflectionClass|\ReflectionMethod $reflection): string
     {
         $file = $reflection->getFileName();
