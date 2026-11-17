@@ -33,6 +33,18 @@ final class FsrsTest extends TestCase
         yield 'easy' => [Rating::Easy, 15.69105, '2026-11-25'];
     }
 
+    public function testANewCardIsIntroducedForATestTheNextDay(): void
+    {
+        $fsrs = new Fsrs();
+        $introduced = $fsrs->introduce(new \DateTimeImmutable(self::NOW));
+
+        self::assertSame('2026-11-10 09:00:00', $introduced->due->format('Y-m-d H:i:s'));
+        self::assertGreaterThan(
+            $introduced->stability,
+            $fsrs->review($introduced, Rating::Good, $introduced->due)->stability,
+        );
+    }
+
     public function testDifficultyStartsHigherForHarderRatings(): void
     {
         $fsrs = new Fsrs();

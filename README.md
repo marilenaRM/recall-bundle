@@ -77,7 +77,10 @@ bin/console recall:review           # review today's cards
 
 `recall:sync` is meant to run on the main branch (in CI, or by whoever merges), with the resulting
 `recall/deck.json` committed. `recall:review --new=10` changes how many never-seen cards a session
-introduces.
+introduces. A new card is shown with its answer rather than asked: there is nothing to recall yet.
+Its first test comes the next day, and from then on each answer is rated from 1 (forgotten) to 4
+(easy). New cards alternate between facts and kinds, so a session mixes decisions, entities and
+routes.
 
 ## Adding a source of facts
 

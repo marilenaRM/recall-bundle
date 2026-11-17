@@ -51,28 +51,43 @@ final readonly class ReviewCommand
             return Command::SUCCESS;
         }
 
-        foreach ($cards as $index => $card) {
-            $this->ask($io, $card, $index + 1, \count($cards));
+        $introduced = $reviewed = 0;
+        $ratings = array_combine(
+            array_map(static fn (Rating $rating): int => $rating->value, Rating::cases()),
+            array_map(static fn (Rating $rating): string => $rating->name, Rating::cases()),
+        );
 
-            $rating = Rating::fromName($io->choice('How well did you remember?', array_column(Rating::cases(), 'name'), Rating::Good->name));
-            $state = $this->fsrs->review($progress->stateOf($card), $rating, $this->clock->now());
+        foreach ($cards as $index => $card) {
+            $state = $progress->stateOf($card);
+            $io->section(\sprintf('%d/%d — %s%s', $index + 1, \count($cards), null === $state ? 'New · ' : '', $card->kind->name));
+            $io->writeln($card->question);
+            $io->newLine();
+
+            if (null === $state) {
+                $this->reveal($io, $card);
+                $io->ask('Read it, then press Enter (first test tomorrow)', '');
+                $state = $this->fsrs->introduce($this->clock->now());
+                ++$introduced;
+            } else {
+                $io->ask('Your answer (optional, Enter to reveal)', '');
+                $this->reveal($io, $card);
+                $rating = Rating::fromName($io->choice('How well did you remember?', $ratings));
+                $state = $this->fsrs->review($state, $rating, $this->clock->now());
+                ++$reviewed;
+            }
+
             $progress->update($card, $state);
             $this->progressStorage->save($progress);
-
             $io->writeln(\sprintf('<comment>Next review: %s</comment>', $state->due->format('Y-m-d')));
         }
 
-        $io->success(\sprintf('%d card(s) reviewed.', \count($cards)));
+        $io->success(\sprintf('%d new card(s) introduced, %d card(s) reviewed.', $introduced, $reviewed));
 
         return Command::SUCCESS;
     }
 
-    private function ask(SymfonyStyle $io, Card $card, int $position, int $total): void
+    private function reveal(SymfonyStyle $io, Card $card): void
     {
-        $io->section(\sprintf('%d/%d — %s', $position, $total, $card->kind->name));
-        $io->writeln($card->question);
-        $io->newLine();
-        $io->ask('Your answer (optional, Enter to reveal)', '');
         $io->block($card->answer, 'ANSWER', 'fg=black;bg=green', ' ', true);
         $io->writeln('<comment>Source: '.$card->source.'</comment>');
     }

@@ -44,6 +44,20 @@ final readonly class Fsrs
         );
     }
 
+    /**
+     * A new card is shown with its answer, not tested: nothing has been learned yet to recall. It
+     * starts as if answered Good and comes back the next day for its first real test.
+     */
+    public function introduce(\DateTimeImmutable $now): MemoryState
+    {
+        return new MemoryState(
+            stability: self::W[Rating::Good->value - 1],
+            difficulty: $this->initialDifficulty(Rating::Good),
+            lastReview: $now,
+            due: $now->modify('+1 day'),
+        );
+    }
+
     public function retrievability(MemoryState $state, \DateTimeImmutable $now): float
     {
         $elapsedDays = max(0, $now->getTimestamp() - $state->lastReview->getTimestamp()) / self::SECONDS_PER_DAY;
