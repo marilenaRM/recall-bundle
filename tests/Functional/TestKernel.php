@@ -39,6 +39,15 @@ final class TestKernel extends Kernel
         return $this->workDir.'/cache';
     }
 
+    /**
+     * Each test boots a kernel on its own work directory within the same PHP process: a shared
+     * container class name would make later kernels reuse the first container and its paths.
+     */
+    protected function getContainerClass(): string
+    {
+        return parent::getContainerClass().hash('xxh32', $this->workDir);
+    }
+
     public function getLogDir(): string
     {
         return $this->workDir.'/log';
