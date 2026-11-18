@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace MarilenaRM\RecallBundle\Tests\Card;
 
 use MarilenaRM\RecallBundle\Card\Card;
+use MarilenaRM\RecallBundle\Card\CardDraft;
 use MarilenaRM\RecallBundle\Card\CardGenerator;
+use MarilenaRM\RecallBundle\Card\Deck;
 use MarilenaRM\RecallBundle\Card\DeckStorage;
 use MarilenaRM\RecallBundle\Card\DeckSynchronizer;
 use MarilenaRM\RecallBundle\Card\DuplicateFinder;
@@ -66,6 +68,19 @@ final class DeckSynchronizerTest extends TestCase
 
         self::assertSame(['About route:home v1?'], array_map(static fn (Card $card): string => $card->question, $report->obsolete));
         self::assertSame(['About route:home v2?'], $this->questions());
+    }
+
+    public function testItRegeneratesTheCardsWrittenByAnEarlierPrompt(): void
+    {
+        $fact = self::fact('route:home', 'v1');
+        // Written before prompt versions existed: the bare fact fingerprint.
+        $this->storage->save(new Deck([$fact->id => $fact->fingerprint], [Card::fromDraft($fact, new CardDraft('Old question?', 'Old answer.'))]));
+
+        $report = $this->sync([$fact]);
+
+        self::assertSame(['route:home'], $this->promptedFacts);
+        self::assertSame(['Old question?'], array_map(static fn (Card $card): string => $card->question, $report->obsolete));
+        self::assertSame(['About route:home v1?'], $this->questions());
     }
 
     public function testItDropsTheCardsOfVanishedFacts(): void

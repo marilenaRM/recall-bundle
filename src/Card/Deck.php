@@ -7,8 +7,9 @@ namespace MarilenaRM\RecallBundle\Card;
 use MarilenaRM\RecallBundle\Fact\Fact;
 
 /**
- * The cards, and the fingerprint of the fact each group was written from. A fact that yielded no
- * card is still recorded, so it is not sent to the model again until its source changes.
+ * The cards, and the fingerprint of the fact each group was written from, stamped with the prompt
+ * version that wrote it. A fact that yielded no card is still recorded, so it is not sent to the
+ * model again until its source or the prompt changes.
  */
 final class Deck
 {
@@ -25,6 +26,11 @@ final class Deck
     public function fingerprintOf(string $factId): ?string
     {
         return $this->fingerprints[$factId] ?? null;
+    }
+
+    public function isCurrent(Fact $fact): bool
+    {
+        return $this->fingerprintOf($fact->id) === self::stamp($fact);
     }
 
     /**
@@ -57,7 +63,7 @@ final class Deck
     public function record(Fact $fact, array $cards): void
     {
         $this->forget($fact->id);
-        $this->fingerprints[$fact->id] = $fact->fingerprint;
+        $this->fingerprints[$fact->id] = self::stamp($fact);
         array_push($this->cards, ...$cards);
     }
 
@@ -81,5 +87,10 @@ final class Deck
     {
         unset($this->fingerprints[$factId]);
         $this->cards = array_values(array_filter($this->cards, static fn (Card $card): bool => $card->factId !== $factId));
+    }
+
+    private static function stamp(Fact $fact): string
+    {
+        return hash('xxh128', $fact->fingerprint.'/prompt-v'.CardGenerator::PROMPT_VERSION);
     }
 }
