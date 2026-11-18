@@ -13,6 +13,13 @@ use Symfony\AI\Platform\StructuredOutput\PlatformSubscriber;
 
 final readonly class CardGenerator
 {
+    /**
+     * Bump it when a change to the instructions should rewrite the cards already in decks: every fact is
+     * then regenerated on the next sync. Cards whose question changes lose their review progress, so
+     * leave it alone for a change that does not affect what the cards say.
+     */
+    public const int PROMPT_VERSION = 2;
+
     private const string INSTRUCTIONS = <<<'PROMPT'
         You write spaced-repetition review cards that help developers remember a Symfony project they work on.
 

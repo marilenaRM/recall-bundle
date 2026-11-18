@@ -34,9 +34,7 @@ final readonly class DeckSynchronizer
         foreach ($this->extractors as $extractor) {
             foreach ($extractor->extract() as $fact) {
                 unset($vanished[$fact->id]);
-                $fingerprint = $deck->fingerprintOf($fact->id);
-
-                if ($fingerprint === $fact->fingerprint) {
+                if ($deck->isCurrent($fact)) {
                     $unchanged[] = $fact;
                     continue;
                 }

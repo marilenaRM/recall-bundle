@@ -16,7 +16,9 @@ developer is about to forget comes back just before they forget it.
 - **Cards are grounded.** Every card points at the file and line, or the document, it was written
   from. The model is told to ask nothing the material does not say.
 - **Cards expire with the code.** Each fact is fingerprinted. When a controller, an entity or an ADR
-  changes, its cards are regenerated on the next sync; when it disappears, so do its cards.
+  changes, its cards are regenerated on the next sync; when it disappears, so do its cards. A new
+  release that improves the card prompt regenerates the whole deck once, on the first sync after the
+  upgrade: progress is kept on cards that come back with the same question, and lost on the others.
 - **One rule, one card.** Cards are written one fact at a time, so the same rule tends to come back
   on several facts (the second argument of `#[IsGranted]` on every protected route). After each sync,
   the model compares the new cards with the deck and drops the ones testing knowledge already
