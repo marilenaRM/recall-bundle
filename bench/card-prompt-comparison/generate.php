@@ -7,13 +7,15 @@ declare(strict_types=1);
  *
  *   php generate.php <checkout> <facts.json> <out.json> <label> <model> <runs> <max-cards> <language>
  *
- * Reads the key from ANTHROPIC_API_KEY. A failed call is recorded and the run goes on.
+ * Reads the key from ANTHROPIC_API_KEY. A failed call is recorded and the run goes on, except an
+ * authentication failure: every other call would fail the same way, so the run stops there.
  */
 
 use MarilenaRM\RecallBundle\Card\CardGenerator;
 use MarilenaRM\RecallBundle\Fact\Fact;
 use MarilenaRM\RecallBundle\Fact\FactKind;
 use Symfony\AI\Platform\Bridge\Anthropic\Factory;
+use Symfony\AI\Platform\Exception\AuthenticationException;
 use Symfony\AI\Platform\StructuredOutput\PlatformSubscriber;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 
@@ -59,6 +61,9 @@ foreach ($facts as $data) {
                 $entry['cards'][] = ['question' => $card->question, 'answer' => $card->answer];
             }
             fprintf(\STDERR, "%d cards\n", \count($entry['cards']));
+        } catch (AuthenticationException $e) {
+            fprintf(\STDERR, "ERROR %s\nAuthentication failed: check ANTHROPIC_API_KEY. Stopping.\n", $e->getMessage());
+            exit(1);
         } catch (Throwable $e) {
             $entry['error'] = $e::class.': '.$e->getMessage();
             fprintf(\STDERR, "ERROR %s\n", $entry['error']);
