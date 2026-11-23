@@ -16,20 +16,25 @@ if (null === $dir) {
     exit(1);
 }
 
-/** A question that probably asks two things. */
+/**
+ * A question that probably asks two things.
+ *
+ * An "and" joining two verbs ("record the order and dispatch a message") and a comma closing a
+ * leading clause ("When Redis is down, why...") ask one thing: only a question word after the
+ * "and"/"or", or after a comma that does not close a leading clause, starts a second ask.
+ */
 function compoundReasons(string $question): array
 {
+    $wh = '(what|why|how|when|which|who|where)';
     $reasons = [];
     if (substr_count($question, '?') > 1) {
         $reasons[] = 'several "?"';
     }
-    if (preg_match('/\b(and|or)\b/i', $question, $m)) {
-        $reasons[] = '"'.strtolower($m[1]).'"';
+    if (preg_match('/\b(and|or)\s+'.$wh.'\b/i', $question, $m)) {
+        $reasons[] = '"'.strtolower($m[1].' '.$m[2]).'"';
     }
-    if (preg_match('/\b(what|why|how|when|which|who|where)\s*(,|and|or)\s*(what|why|how|when|which|who|where)\b/i', $question)) {
-        $reasons[] = 'paired question words';
-    }
-    if (preg_match('/,\s*(and\s+|or\s+)?(what|why|how|when|which|who|where)\b/i', $question)) {
+    if (!preg_match('/^(if|when|whenever|once|since|because|unless|while|after|before|although|even though|as soon as)\b/i', $question)
+        && preg_match('/,\s*'.$wh.'\b/i', $question)) {
         $reasons[] = 'comma before a second ask';
     }
 

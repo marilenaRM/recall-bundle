@@ -25,6 +25,7 @@ Settings, all optional: `RUNS` (3), `MODEL` (`claude-sonnet-5-5`), `LANGUAGE` (E
 `KEEP_WORKTREES=1` keeps the worktrees and their `vendor/`; pass the printed `WORKDIR=...` to a later
 run to skip the installs.
 
-The flags are heuristics that point at cards worth reading: a compound flag fires on any "and" or
-"or", for instance. Confirm each flagged card before quoting the numbers. `php report.php out`
+The flags are heuristics that point at cards worth reading: a compound flag fires on a question word
+after "and", "or" or a comma, so "Under what condition, and why?" is flagged but "When Redis is down,
+why...?" is not. Confirm each flagged card before quoting the numbers. `php report.php out`
 rebuilds the report from `before.json` and `after.json` without calling the API again.
