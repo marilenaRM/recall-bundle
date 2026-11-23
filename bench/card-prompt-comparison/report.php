@@ -51,7 +51,7 @@ function labelMatches(string $text): array
         '/\b[A-Z]{2,}-\d+\b/',
         '/(?<![\w&])#\d+\b/',
         '/\bsection\s+\d+/i',
-        '/\bthe\s+(document|decision above|above decision|record|adr|material|text|source)\b/i',
+        '/\bthe\s+(document|decision above|above decision|decision record|adr|material|text|source)\b/i',
     ];
     $found = [];
     foreach ($patterns as $pattern) {
